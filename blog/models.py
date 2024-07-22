@@ -1,6 +1,32 @@
 from django.db import models
+from django.db.models import Count
 from django.urls import reverse
 from django.contrib.auth.models import User
+
+class TagQuerySet(models.QuerySet):
+    def popular(self):
+        return self.annotate(posts_count=Count('posts', distinct=True)).order_by(
+            '-posts_count'
+        )
+
+
+class PostQuerySet(models.QuerySet):
+    def popular(self):
+        return self.annotate(
+            likes_count=Count('likes', distinct=True),
+        ).order_by('-likes_count')
+    def fetch_with_comments_count(self):
+        most_popular_posts = list(self)
+        most_popular_posts_ids = [post.id for post in most_popular_posts]
+        posts_with_comments = self.model.objects.filter(
+            id__in=most_popular_posts_ids
+        ).annotate(comments_count=Count('comments', distinct=True))
+        posts_comments_dict = dict(
+            posts_with_comments.values_list('id', 'comments_count')
+        )
+        for post in most_popular_posts:
+            post.comments_count = posts_comments_dict.get(post.id, 0)
+        return most_popular_posts
 
 
 class Post(models.Model):
@@ -13,14 +39,15 @@ class Post(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name="Автор",
-        limit_choices_to={"is_staff": True},
+        verbose_name='Автор',
+        limit_choices_to={'is_staff': True},
     )
     likes = models.ManyToManyField(
-         User, related_name="liked_posts", verbose_name="Кто лайкнул", blank=True
+        User, related_name='liked_posts', verbose_name='Кто лайкнул', blank=True
     )
-    tags = models.ManyToManyField("Tag", related_name="posts", verbose_name="Теги")
+    tags = models.ManyToManyField('Tag', related_name='posts', verbose_name='Теги')
 
+    objects = PostQuerySet.as_manager()
 
     def __str__(self):
         return self.title
@@ -32,7 +59,6 @@ class Post(models.Model):
         ordering = ['-published_at']
         verbose_name = 'пост'
         verbose_name_plural = 'посты'
-
 
 class Tag(models.Model):
     title = models.CharField('Тег', max_length=20, unique=True)
