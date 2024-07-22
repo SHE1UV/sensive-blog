@@ -4,7 +4,7 @@ from blog.models import Comment, Post, Tag
 
 
 def serialize_post_optimized(post):
-    annotated_tags = Tag.objects.annotate(posts_count=Count('posts'))
+    annotated_tags = Tag.objects.fetch_posts_count()
     return {
         'title': post.title,
         'teaser_text': post.text[:200],
@@ -34,16 +34,13 @@ def index(request):
     )
 
     fresh_posts = (
-        Post.objects.annotate(comments_count=Count('comments'))
-        .order_by('-published_at')
-        .prefetch_related('author', 'tags')[:5]
+        Post.objects.order_by("-published_at")
+        .prefetch_related("author", "tags")
+        .fetch_with_comments_count()
     )
     most_fresh_posts = list(fresh_posts)[-5:]
 
-    most_popular_tags = Tag.objects.annotate(
-        posts_count=Count('posts', distinct=True)
-    ).popular()[:5]
-
+    most_popular_tags = Tag.objects.fetch_posts_count().popular()[:5]
 
     context = {
        'most_popular_posts': [
@@ -68,7 +65,7 @@ def post_detail(request, slug):
 
     likes = post.likes.all()
 
-    related_tags = post.tags.all()
+    related_tags = post.tags.fetch_posts_count()
 
     serialized_post = {
         'title': post.title,
@@ -82,9 +79,7 @@ def post_detail(request, slug):
         'tags': [serialize_tag(tag) for tag in related_tags],
     }
 
-    most_popular_tags = Tag.objects.annotate(
-        posts_count=Count('posts', distinct=True)
-    ).popular()[:5]
+    most_popular_tags = Tag.objects.fetch_posts_count().popular()[:5]
 
     most_popular_posts = (
         Post.objects.popular()
@@ -103,11 +98,9 @@ def post_detail(request, slug):
 
 
 def tag_filter(request, tag_title):
-    tag = Tag.objects.get(title=tag_title)
+    tag = Tag.objects.fetch_posts_count().get(title=tag_title)
 
-    most_popular_tags = Tag.objects.annotate(
-        posts_count=Count('posts', distinct=True)
-    ).popular()[:5]
+    most_popular_tags = Tag.objects.fetch_posts_count().popular()[:5]
 
     most_popular_posts = (
         Post.objects.popular()
@@ -115,9 +108,7 @@ def tag_filter(request, tag_title):
         .fetch_with_comments_count()
     )
 
-    related_posts = tag.posts.annotate(comments_count=Count('comment', distinct=True))[
-        :20
-    ]
+    related_posts = tag.posts.fetch_with_comments_count()[:20]
 
     context = {
         'tag': tag.title,
