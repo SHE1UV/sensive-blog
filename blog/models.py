@@ -5,10 +5,10 @@ from django.contrib.auth.models import User
 
 class TagQuerySet(models.QuerySet):
     def popular(self):
-        return self.order_by("-posts_count")
+        return self.order_by('-posts_count')
 
     def fetch_posts_count(self):
-        return self.annotate(posts_count=Count("posts", distinct=True))
+        return self.annotate(posts_count=Count('posts', distinct=True))
 
 
 class PostQuerySet(models.QuerySet):
@@ -17,7 +17,7 @@ class PostQuerySet(models.QuerySet):
             likes_count=Count('likes', distinct=True),
         ).order_by('-likes_count')
     def fetch_with_comments_count(self):
-        most_popular_posts = list(self)
+        most_popular_posts = self
         most_popular_posts_ids = [post.id for post in most_popular_posts]
         posts_with_comments = self.model.objects.filter(
             id__in=most_popular_posts_ids
