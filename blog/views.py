@@ -41,7 +41,7 @@ def index(request):
     most_fresh_posts = list(fresh_posts)[-5:]
 
     most_popular_tags = Tag.objects.annotate(
-        posts_count=Count("posts", distinct=True)
+        posts_count=Count('posts', distinct=True)
     ).popular()[:5]
 
 
@@ -83,12 +83,12 @@ def post_detail(request, slug):
     }
 
     most_popular_tags = Tag.objects.annotate(
-        posts_count=Count("posts", distinct=True)
+        posts_count=Count('posts', distinct=True)
     ).popular()[:5]
 
     most_popular_posts = (
         Post.objects.popular()
-        .prefetch_related("author", "tags")[:5]
+        .prefetch_related('author', 'tags')[:5]
         .fetch_with_comments_count()
     )
 
@@ -106,12 +106,12 @@ def tag_filter(request, tag_title):
     tag = Tag.objects.get(title=tag_title)
 
     most_popular_tags = Tag.objects.annotate(
-        posts_count=Count("posts", distinct=True)
+        posts_count=Count('posts', distinct=True)
     ).popular()[:5]
 
     most_popular_posts = (
         Post.objects.popular()
-        .prefetch_related("author", "tags")[:5]
+        .prefetch_related('author', 'tags')[:5]
         .fetch_with_comments_count()
     )
 
