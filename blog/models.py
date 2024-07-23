@@ -3,11 +3,13 @@ from django.db.models import Count, Prefetch
 from django.urls import reverse
 from django.contrib.auth.models import User
 
+
 class TagQuerySet(models.QuerySet):
     def popular(self):
         return self.annotate(likes_count=Count('likes', distinct=True)).order_by(
             '-likes_count'
         )
+
 
     def fetch_posts_count(self):
         return self.annotate(posts_count=Count('posts', distinct=True))
@@ -18,6 +20,8 @@ class PostQuerySet(models.QuerySet):
         return self.annotate(
             likes_count=Count('likes', distinct=True),
         ).order_by('-likes_count')
+
+
     def fetch_with_comments_count(self):
         most_popular_posts = self
         most_popular_posts_ids = [post.id for post in most_popular_posts]
@@ -32,7 +36,7 @@ class PostQuerySet(models.QuerySet):
         return most_popular_posts
 
 
-def prefetch_post_details(self):
+    def prefetch_post_details(self):
         return self.prefetch_related(
             'author', Prefetch('tags', queryset=Tag.objects.fetch_posts_count())
         )
@@ -61,13 +65,16 @@ class Post(models.Model):
     def __str__(self):
         return self.title
 
+
     def get_absolute_url(self):
         return reverse('post_detail', args={'slug': self.slug})
+
 
     class Meta:
         ordering = ['-published_at']
         verbose_name = 'пост'
         verbose_name_plural = 'посты'
+
 
 class Tag(models.Model):
     title = models.CharField('Тег', max_length=20, unique=True)
@@ -75,11 +82,14 @@ class Tag(models.Model):
     def __str__(self):
         return self.title
 
+
     def clean(self):
         self.title = self.title.lower()
 
+
     def get_absolute_url(self):
         return reverse('tag_filter', args={'tag_title': self.slug})
+
 
     class Meta:
         ordering = ['title']
@@ -101,7 +111,6 @@ class Comment(models.Model):
     )
     text = models.TextField('Текст комментария')
     published_at = models.DateTimeField('Дата и время публикации')
-
 
     def __str__(self):
         return f'{self.author.username} under {self.post.title}'
