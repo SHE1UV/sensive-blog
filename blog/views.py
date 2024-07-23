@@ -23,9 +23,7 @@ def serialize_tag(tag):
         'posts_with_tag': tag.posts_count,
     }
 
-
 def index(request):
-
     most_popular_posts = (
         Post.objects.popular().prefetch_post_details().fetch_with_comments_count()[:5]
     )
@@ -105,7 +103,6 @@ def tag_filter(request, tag_title):
         comments_count=Count('comments')
     ).prefetch_post_details()[:20]
 
-
     context = {
         'tag': tag.title,
         'popular_tags': [serialize_tag(tag) for tag in most_popular_tags],
@@ -116,6 +113,4 @@ def tag_filter(request, tag_title):
 
 
 def contacts(request):
-    # позже здесь будет код для статистики заходов на эту страницу
-    # и для записи фидбека
     return render(request, 'contacts.html', {})
